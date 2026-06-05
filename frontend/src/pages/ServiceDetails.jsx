@@ -69,6 +69,14 @@ const [mobile, setMobile] =
 const [errors, setErrors] =
   useState({});
 
+// PAYMENT IN-PROGRESS GUARD
+// Prevents opening the Razorpay modal
+// multiple times (double clicks / re-entry),
+// which re-initializes the SDK and re-fetches
+// its internal checkout chunks each time.
+const [isPaying, setIsPaying] =
+  useState(false);
+
   const service = services.find(
     (item) => item.slug === slug
   );
@@ -145,6 +153,12 @@ const validateForm = () => {
   //Create Payment Function
   const handlePayment = async () => {
 
+  // BLOCK RE-ENTRY WHILE A CHECKOUT
+  // IS ALREADY IN PROGRESS
+  if (isPaying) {
+    return;
+  }
+
   // VALIDATE FIRST
   const isValid =
     validateForm();
@@ -157,6 +171,8 @@ const validateForm = () => {
 
     return;
   }
+
+  setIsPaying(true);
 
   try {
 
@@ -174,7 +190,7 @@ const validateForm = () => {
 
     const options = {
 
-      key: "rzp_test_SsQ8XQZInTdAH5",
+      key: "rzp_live_Sy23XUyL2mCGd0",
 
       amount: data.amount,
 
@@ -188,6 +204,9 @@ const validateForm = () => {
 
       handler: async function () {
 
+        // ALLOW A NEW CHECKOUT ONCE DONE
+        setIsPaying(false);
+
         toast.success(
           "Payment Successful"
         );
@@ -195,6 +214,13 @@ const validateForm = () => {
         // SAVE ORDER
         handleSubmit();
 
+      },
+
+      // RE-ENABLE WHEN USER CLOSES MODAL
+      modal: {
+        ondismiss: function () {
+          setIsPaying(false);
+        },
       },
 
       theme: {
@@ -206,11 +232,22 @@ const validateForm = () => {
     const razor =
       new window.Razorpay(options);
 
+    // SURFACE FAILED PAYMENTS INSTEAD OF
+    // LEAVING THE BUTTON STUCK
+    razor.on("payment.failed", function () {
+      setIsPaying(false);
+      toast.error(
+        "Payment Failed"
+      );
+    });
+
     razor.open();
 
   } catch (error) {
 
     console.log(error);
+
+    setIsPaying(false);
 
     toast.error(
       "Payment Failed"
@@ -1022,6 +1059,7 @@ useEffect(() => {
         {/* BUTTON */}
       <button
         onClick={handlePayment}
+        disabled={isPaying}
         style={{
           marginTop: "30px",
           background: "#D40000",
@@ -1029,13 +1067,14 @@ useEffect(() => {
           border: "none",
           padding: "15px 30px",
           borderRadius: "8px",
-          cursor: "pointer",
+          cursor: isPaying ? "not-allowed" : "pointer",
+          opacity: isPaying ? 0.7 : 1,
           width: "100%",
           fontSize: "17px",
           fontWeight: "bold",
         }}
       >
-        Proceed To Checkout
+        {isPaying ? "Processing..." : "Proceed To Checkout"}
       </button>
       </div>
     </section> 
