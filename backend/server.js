@@ -109,7 +109,9 @@ app.post("/api/payment/create-order", async (req, res) => {
     const { amount } = req.body;
 
     const options = {
-      amount: amount * 100,
+      // Razorpay needs an integer paise value; round to avoid
+      // floating-point amounts (e.g. 100.98 * 100 = 10097.999...).
+      amount: Math.round(amount * 100),
       currency: "INR",
       receipt: "receipt_order_" + Date.now(),
     };
@@ -385,8 +387,10 @@ app.post(
 
         invoiceNumber,
         paymentStatus: "Paid",
-        price: 99,
-        gst: 2,
+        // USE THE PRODUCT'S PRICE/GST FROM THE REQUEST;
+        // FALL BACK TO PRICE 99 AND 12% GST IF NOT PROVIDED.
+        price: req.body.price ? Number(req.body.price) : 99,
+        gst: req.body.gst ? Number(req.body.gst) : 12,
 
       });
 

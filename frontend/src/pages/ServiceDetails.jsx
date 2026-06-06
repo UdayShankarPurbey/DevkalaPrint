@@ -86,6 +86,15 @@ const [isPaying, setIsPaying] =
     return <h1>Service Not Found</h1>;
   }
 
+  // BASE PRICE + PRODUCT GST (DEFAULT 12%), TWO DECIMALS.
+  const basePrice = parseInt(
+    service.price.replace(/[^0-9]/g, "")
+  );
+  const gstPercent = service.gst ?? 12;
+  const totalPrice = (
+    basePrice + (basePrice * gstPercent) / 100
+  ).toFixed(2);
+
 
 
 
@@ -187,10 +196,16 @@ const validateForm = () => {
       return;
     }
 
-    const amount =
+    const basePrice =
       parseInt(
         service.price.replace(/[^0-9]/g, "")
       );
+
+    // USE THE PRODUCT'S OWN GST (DEFAULT 12% IF NOT SET),
+    // SAME WAY THE PRICE COMES FROM THE PRODUCT.
+    const gstPercent = service.gst ?? 12;
+    const amount =
+      basePrice + (basePrice * gstPercent) / 100;
 
     const { data } = await axios.post(
       `${API_URL}/api/payment/create-order`,
@@ -391,6 +406,20 @@ const validateForm = () => {
       service.title
     );
 
+    // SEND THE PRODUCT'S PRICE AND GST (DEFAULT 12%) SO THE
+    // ORDER STORES THE REAL VALUES INSTEAD OF HARDCODED ONES.
+    formData.append(
+      "price",
+      parseInt(
+        service.price.replace(/[^0-9]/g, "")
+      )
+    );
+
+    formData.append(
+      "gst",
+      service.gst ?? 12
+    );
+
     formData.append(
       "fullName",
       fullName
@@ -555,7 +584,7 @@ useEffect(() => {
             fontWeight: "bold",
           }}
         >
-          Print + GST = {service.price}
+          Print + GST = ₹{totalPrice}
         </h2>
 
         {/* UPLOAD SECTION */}

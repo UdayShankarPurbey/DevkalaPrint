@@ -57,7 +57,7 @@ export default function Admin() {
     try {
 
       const res = await axios.get(
-        "${API_URL}/api/orders"
+        `${API_URL}/api/orders`
       );
 
       setOrders(

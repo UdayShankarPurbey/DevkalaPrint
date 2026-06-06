@@ -19,6 +19,14 @@ export default function OrderSuccess() {
   const paymentId =
     location.state?.paymentId;
 
+  // TOTAL = PRICE + GST, ALWAYS SHOWN WITH TWO DECIMALS
+  const totalAmount = order
+    ? (
+        order.price +
+        (order.price * order.gst) / 100
+      ).toFixed(2)
+    : "0.00";
+
     const downloadPDF = () => {
 
   const element =
@@ -450,7 +458,7 @@ export default function OrderSuccess() {
                 fontSize: "42px",
               }}
             >
-              ₹100.98
+              ₹{totalAmount}
             </h1>
 
           </div>
