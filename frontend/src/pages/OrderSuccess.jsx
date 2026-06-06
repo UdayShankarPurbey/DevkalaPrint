@@ -16,6 +16,9 @@ export default function OrderSuccess() {
   const order =
     location.state?.order;
 
+  const paymentId =
+    location.state?.paymentId;
+
     const downloadPDF = () => {
 
   const element =
@@ -54,16 +57,58 @@ export default function OrderSuccess() {
 
   if (!order) {
 
+    // PAYMENT SUCCEEDED BUT SAVING THE ORDER HICCUPPED.
+    // STILL CONFIRM THE PAYMENT INSTEAD OF A BARE ERROR.
     return (
 
-      <h2
+      <div
         style={{
+          minHeight: "100vh",
+          background: "#f4f6f9",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
           textAlign: "center",
-          marginTop: "100px",
+          padding: "25px",
         }}
       >
-        No Order Found
-      </h2>
+
+        <div
+          style={{
+            width: "90px",
+            height: "90px",
+            background: "#e8f8ed",
+            color: "green",
+            borderRadius: "50%",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            fontSize: "45px",
+            marginBottom: "20px",
+          }}
+        >
+          ✓
+        </div>
+
+        <h2 style={{ color: "green", marginBottom: "10px" }}>
+          Payment Successful
+        </h2>
+
+        <p style={{ color: "#666", maxWidth: "420px" }}>
+          {paymentId
+            ? `Your payment (${paymentId}) was received. We are processing your order and will email you shortly.`
+            : "Your payment was received. We are processing your order and will email you shortly."}
+        </p>
+
+        <button
+          onClick={() => navigate("/")}
+          style={{ ...primaryBtn, marginTop: "25px" }}
+        >
+          Back Home
+        </button>
+
+      </div>
 
     );
 

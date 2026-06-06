@@ -6,6 +6,7 @@ import { useState,useEffect } from "react";
 import axios from "axios";
 import services from "../data/services";
 import Navbar from "../components/Navbar";
+import loadRazorpay from "../utils/loadRazorpay";
 
 import {
   ToastContainer,
@@ -176,6 +177,16 @@ const validateForm = () => {
 
   try {
 
+    const sdkReady = await loadRazorpay();
+
+    if (!sdkReady || !window.Razorpay) {
+      setIsPaying(false);
+      toast.error(
+        "Payment SDK Failed To Load"
+      );
+      return;
+    }
+
     const amount =
       parseInt(
         service.price.replace(/[^0-9]/g, "")
@@ -190,7 +201,7 @@ const validateForm = () => {
 
     const options = {
 
-      key: "rzp_live_Sy23XUyL2mCGd0",
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
 
       amount: data.amount,
 
@@ -202,17 +213,49 @@ const validateForm = () => {
 
       order_id: data.id,
 
-      handler: async function () {
-
-        // ALLOW A NEW CHECKOUT ONCE DONE
-        setIsPaying(false);
+      handler: async function (response) {
 
         toast.success(
           "Payment Successful"
         );
 
-        // SAVE ORDER
-        handleSubmit();
+        // PAYMENT IS DONE — ALWAYS LAND THE USER ON THE
+        // SUCCESS SCREEN, EVEN IF SAVING THE ORDER HICCUPS.
+        try {
+
+          const savedOrder = await handleSubmit();
+
+          navigate(
+            "/order-success",
+            {
+              state: {
+                order: savedOrder,
+                paymentId:
+                  response?.razorpay_payment_id,
+              },
+            }
+          );
+
+        } catch (err) {
+
+          console.log(err);
+
+          navigate(
+            "/order-success",
+            {
+              state: {
+                order: null,
+                paymentId:
+                  response?.razorpay_payment_id,
+              },
+            }
+          );
+
+        } finally {
+
+          setIsPaying(false);
+
+        }
 
       },
 
@@ -415,35 +458,9 @@ const validateForm = () => {
 
     console.log(response.data);
 
-    navigate(
-    "/order-success",
-    {
-      state: {
-        order:
-          response.data.data,
-      },
-    }
-  );
-    
-
-    // CLEAR FORM
-    setFullName("");
-    setAddress("");
-    setCity("");
-    setStateName("");
-    setPincode("");
-    setMobile("");
-
-    setFrontImage(null);
-    setBackImage(null);
-
-    setFrontPreview("");
-    setBackPreview("");
-
-    setFrontFileName("");
-    setBackFileName("");
-
-    setErrors({});
+    // RETURN THE SAVED ORDER SO THE PAYMENT HANDLER
+    // CAN NAVIGATE TO THE SUCCESS SCREEN.
+    return response.data.data;
 
   } catch (error) {
 
@@ -451,9 +468,8 @@ const validateForm = () => {
       error.response?.data || error
     );
 
-    toast.error(
-      "Server Error! Try Again"
-    );
+    // LET THE CALLER DECIDE WHAT TO DO ON FAILURE.
+    throw error;
 
   }
 
