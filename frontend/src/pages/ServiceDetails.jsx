@@ -90,7 +90,7 @@ const [isPaying, setIsPaying] =
   const basePrice = parseInt(
     service.price.replace(/[^0-9]/g, "")
   );
-  const gstPercent = service.gst ?? 12;
+  const gstPercent = service.gst ?? 5;
   const totalPrice = (
     basePrice + (basePrice * gstPercent) / 100
   ).toFixed(2);
